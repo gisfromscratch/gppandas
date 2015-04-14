@@ -31,6 +31,6 @@ print
 print unicode(pointsData.describe())
 print
 
-# Show null mask
-print unicode(pd.isnull(pointsData.head()))
+# Group by TYPE
+print unicode(pointsData.groupby('TYPE').size())
 print
