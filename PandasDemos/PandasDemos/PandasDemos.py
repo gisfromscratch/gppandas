@@ -16,22 +16,26 @@ def valueToFloat(value):
 
 # Create a series
 pointTypes = pd.Series(['bus_stop', 'kiosk', 'traffic_signals'])
-#print unicode(pointTypes)
+print(pointTypes)
 print
 
 # Read the data, ignore errors, decimal=',' only works for the first coordinate
-coordinateConverters = {'XCoord': lambda coordinate: valueToFloat(coordinate), 'YCoord': lambda coordinate: valueToFloat(coordinate)}
-pointsData = pd.read_csv(os.path.abspath('../../Data/ColognePoints.csv'), converters=coordinateConverters, sep=';', encoding='utf-8', error_bad_lines=False)
-#print unicode(pointsData.head())
+coordinateConverters = {'Longitude': lambda coordinate: valueToFloat(coordinate), 'Latitude': lambda coordinate: valueToFloat(coordinate)}
+colNames = ['GeonameId','Name','ASCIIName','AlternateNames',
+'Latitude','Longitude','FeatureClass','FeatureCode',
+'CountryCode','AlternateCountryCodes','Admin1Code','Admin2Code',
+'Admin3Code','Admin4Code','Population','Elevation','DEM','Timezone','ModificationDate']
+pointsData = pd.read_csv(os.path.abspath('../../Data/allCountries_extract.txt'), header=None, names=colNames, converters=coordinateConverters, sep='\t', encoding='utf-8', error_bad_lines=False)
+print(pointsData.head())
 print
 
 # Describe the data
-print ('Columns and statistics')
-#print unicode(pointsData.columns)
+print('Columns and statistics')
+print(pointsData.columns)
 print
-#print unicode(pointsData.describe())
+print(pointsData.describe())
 print
 
 # Group by TYPE
-#print unicode(pointsData.groupby('TYPE').size())
+print(pointsData.groupby('CountryCode').size())
 print
