@@ -64,3 +64,5 @@ x64/
 *.dll
 *.pdb
 *.obj
+*.ipch
+*.user
