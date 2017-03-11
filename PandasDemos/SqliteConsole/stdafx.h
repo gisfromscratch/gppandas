@@ -10,6 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include "sqlite3.h"
+#include <sstream>
 #include <stdio.h>
 #include <string>
 #include <tchar.h>
