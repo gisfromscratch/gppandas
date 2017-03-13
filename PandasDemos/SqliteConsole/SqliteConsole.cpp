@@ -3,6 +3,8 @@
 
 #include "stdafx.h"
 
+#include "utf8filesource.h"
+
 using namespace std;
 
 int main(int argc, char* argv[])
@@ -12,14 +14,11 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	// Set locale supporting UTF-8
-	//setlocale(LC_ALL, "en_US.utf8");
-
 	cout << "Trying to access " << argv[1] << endl;
 
 	// Try to open the file
-	FILE *file = fopen(argv[1], "rt+, ccs=UTF-8");
-	if (!file)
+	Utf8FileSource file(argv[1]);
+	if (!file.isOpen())
 	{
 		return -1;
 	}
@@ -29,7 +28,6 @@ int main(int argc, char* argv[])
 	int sqliteRetVal = sqlite3_open("memory.db", &db);
 	if (SQLITE_OK != sqliteRetVal)
 	{
-		fclose(file);
 		return -1;
 	}
 
@@ -38,7 +36,6 @@ int main(int argc, char* argv[])
 	sqliteRetVal = sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS Geonames(ID INTEGER, Name TEXT);", 0, 0, &errorMsg);
 	if (SQLITE_OK != sqliteRetVal)
 	{
-		fclose(file);
 		sqlite3_free(errorMsg);
 		sqlite3_close(db);
 		return -1;
@@ -48,23 +45,18 @@ int main(int argc, char* argv[])
 	sqliteRetVal = sqlite3_exec(db, "BEGIN TRANSACTION", 0, 0, &errorMsg);
 	if (SQLITE_OK != sqliteRetVal)
 	{
-		fclose(file);
 		sqlite3_free(errorMsg);
 		sqlite3_close(db);
 		return -1;
 	}
 
 	const size_t sizeOfBom = 3;
-	const size_t maxLineBuffer = 256;
-	wchar_t line[maxLineBuffer];
-	char utf8Line[2*maxLineBuffer];
 
 	char *sqlInsertStatement = "INSERT INTO Geonames VALUES(@ID, @NAME)";
 	sqlite3_stmt *preparedStatement;
 	sqlite3_prepare(db, sqlInsertStatement, -1, &preparedStatement, 0);
 	if (SQLITE_OK != sqliteRetVal)
 	{
-		fclose(file);
 		sqlite3_free(errorMsg);
 		sqlite3_close(db);
 		return -1;
@@ -72,11 +64,18 @@ int main(int argc, char* argv[])
 	
 	bool skippedBom = false;
 	const char *delimiter = "\t";
-	while (fgetws(line, maxLineBuffer, file))
+	char *utf8Line, *token;
+	while (utf8Line = file.nextLine())
 	{
-		cout << line << endl;
-		wcstombs(utf8Line, line, sizeof(utf8Line));
 		cout << utf8Line << endl;
+		if (token = strtok(utf8Line, delimiter))
+		{
+			int id = atoi(token);
+			if (id)
+			{
+
+			}
+		}
 		//if (!skippedBom && utf8::starts_with_bom(line.begin(), line.end()))
 		//{
 		//	line = string(line.begin() + sizeOfBom, line.end());
@@ -152,14 +151,12 @@ int main(int argc, char* argv[])
 	sqliteRetVal = sqlite3_exec(db, "END TRANSACTION", 0, 0, &errorMsg);
 	if (SQLITE_OK != sqliteRetVal)
 	{
-		fclose(file);
 		sqlite3_free(errorMsg);
 		sqlite3_finalize(preparedStatement);
 		sqlite3_close(db);
 		return -1;
 	}
 
-	fclose(file);
 	sqlite3_finalize(preparedStatement);
 	sqlite3_close(db);
     return 0;

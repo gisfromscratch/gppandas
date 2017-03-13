@@ -160,6 +160,7 @@
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="utf8filesource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SqliteConsole.cpp" />
