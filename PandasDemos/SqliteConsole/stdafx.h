@@ -15,3 +15,4 @@
 #include <string>
 #include <tchar.h>
 #include "utf8.h"
+#include <vector>
