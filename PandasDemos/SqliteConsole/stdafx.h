@@ -7,6 +7,7 @@
 
 #include "targetver.h"
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include "sqlite3.h"

@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 
+#include "sqlitedatastore.h"
 #include "utf8filesource.h"
 
 using namespace std;
@@ -14,6 +15,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	//setlocale(LC_ALL, "en_US.UTF-8");
 	cout << "Trying to access " << argv[1] << endl;
 
 	// Try to open the file
@@ -24,141 +26,73 @@ int main(int argc, char* argv[])
 	}
 
 	// Create in memory DB
-	sqlite3 *db;
-	int sqliteRetVal = sqlite3_open("memory.db", &db);
-	if (SQLITE_OK != sqliteRetVal)
+	SqliteDatastore dataStore("memory.db");
+	if (dataStore.isOpen())
 	{
 		return -1;
 	}
 
 	// Create table
-	char *errorMsg;
-	sqliteRetVal = sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS Geonames(ID INTEGER, Name TEXT);", 0, 0, &errorMsg);
-	if (SQLITE_OK != sqliteRetVal)
-	{
-		sqlite3_free(errorMsg);
-		sqlite3_close(db);
+	if (!dataStore.exec("CREATE TABLE IF NOT EXISTS Geonames(ID INTEGER, Name TEXT);"))
+	{		
 		return -1;
 	}
 
 	// Begin transaction
-	sqliteRetVal = sqlite3_exec(db, "BEGIN TRANSACTION", 0, 0, &errorMsg);
-	if (SQLITE_OK != sqliteRetVal)
+	if (!dataStore.beginTransaction())
 	{
-		sqlite3_free(errorMsg);
-		sqlite3_close(db);
 		return -1;
 	}
 
 	const size_t sizeOfBom = 3;
 
 	char *sqlInsertStatement = "INSERT INTO Geonames VALUES(@ID, @NAME)";
-	sqlite3_stmt *preparedStatement;
-	sqlite3_prepare(db, sqlInsertStatement, -1, &preparedStatement, 0);
-	if (SQLITE_OK != sqliteRetVal)
+	sqlite3_stmt *preparedStatement = dataStore.prepare(sqlInsertStatement);
+	if (!preparedStatement)
 	{
-		sqlite3_free(errorMsg);
-		sqlite3_close(db);
 		return -1;
 	}
 	
 	bool skippedBom = false;
-	const char *delimiter = "\t";
-	char *utf8Line, *token;
+	const wchar_t *delimiter = L"\t";
+	Utf8Line *utf8Line;
+	char *token;
 	while (utf8Line = file.nextLine())
 	{
-		cout << utf8Line << endl;
-		if (token = strtok(utf8Line, delimiter))
+		if (token = utf8Line->nextToken(delimiter, true))
 		{
 			int id = atoi(token);
-			if (id)
+			int parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@ID");
+			if (SQLITE_OK != sqlite3_bind_int(preparedStatement, parameterIndex, id))
 			{
-
+				return -1;
 			}
+
+			if (token = utf8Line->nextToken(delimiter, false))
+			{
+				parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@NAME");
+				if (SQLITE_OK != sqlite3_bind_text(preparedStatement, parameterIndex, token, -1, SQLITE_TRANSIENT))
+				{
+					return -1;
+				}
+
+				// Insert record
+				sqlite3_step(preparedStatement);
+			}
+
+			// Clear bindings
+			sqlite3_clear_bindings(preparedStatement);
+
+			// Reset the prepared statement
+			sqlite3_reset(preparedStatement);
 		}
-		//if (!skippedBom && utf8::starts_with_bom(line.begin(), line.end()))
-		//{
-		//	line = string(line.begin() + sizeOfBom, line.end());
-		//	skippedBom = true;
-		//}
-
-		//// Convert it to utf-16
-		//vector<unsigned short> utf16line;
-		//utf8::utf8to16(line.begin(), line.end(), back_inserter(utf16line));
-
-		//// And back to utf-8
-		//string utf8line;
-		//utf8::utf16to8(utf16line.begin(), utf16line.end(), back_inserter(utf8line));
-
-		//size_t delimiterPos = line.find(delimiter);
-		//if (string::npos != delimiterPos && 0 != delimiterPos)
-		//{
-		//	string token = line.substr(0, delimiterPos - 1);
-		//	int id = atoi(token.c_str());
-		//	int parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@ID");
-		//	sqliteRetVal = sqlite3_bind_int(preparedStatement, parameterIndex, id);
-		//	if (SQLITE_OK != sqliteRetVal)
-		//	{
-		//		fclose(file);
-		//		sqlite3_free(errorMsg);
-		//		sqlite3_finalize(preparedStatement);
-		//		sqlite3_close(db);
-		//		return -1;
-		//	}
-
-		//	size_t afterDelimiterPos = delimiterPos + 1;
-		//	if (afterDelimiterPos < line.length())
-		//	{
-		//		delimiterPos = line.find(delimiter, afterDelimiterPos);
-		//		if (string::npos != delimiterPos && 0 < delimiterPos - afterDelimiterPos)
-		//		{
-		//			token = line.substr(afterDelimiterPos, delimiterPos - afterDelimiterPos - 1);
-		//			parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@NAME");
-		//			sqliteRetVal = sqlite3_bind_text(preparedStatement, parameterIndex, token.c_str(), -1, SQLITE_TRANSIENT);
-		//			if (SQLITE_OK != sqliteRetVal)
-		//			{
-		//				fclose(file);
-		//				sqlite3_free(errorMsg);
-		//				sqlite3_finalize(preparedStatement);
-		//				sqlite3_close(db);
-		//				return -1;
-		//			}
-
-		//			// Insert record
-		//			sqlite3_step(preparedStatement);
-
-		//			// Clear bindings
-		//			sqlite3_clear_bindings(preparedStatement);
-
-		//			// Reset the prepared statement
-		//			sqlite3_reset(preparedStatement);
-		//		}
-		//	}
-		//}
-
-		/*string::iterator utf8End = utf8::find_invalid(line.begin(), line.end());
-		if (line.end() != utf8End)
-		{
-			line = string(line.begin(), utf8End);
-		}
-
-		utf8::replace_invalid(line.begin(), line.end(), back_inserter(utf8Line));
-		cout << utf8Line << endl;
-		*/
 	}
 
 	// End transaction
-	sqliteRetVal = sqlite3_exec(db, "END TRANSACTION", 0, 0, &errorMsg);
-	if (SQLITE_OK != sqliteRetVal)
+	if (!dataStore.endTransaction())
 	{
-		sqlite3_free(errorMsg);
-		sqlite3_finalize(preparedStatement);
-		sqlite3_close(db);
 		return -1;
 	}
-
-	sqlite3_finalize(preparedStatement);
-	sqlite3_close(db);
     return 0;
 }
 
