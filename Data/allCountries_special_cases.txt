@@ -1,3 +1,3 @@
-2994701	Roc Mélé	Roc Mele	Roc Mele,Roc Meler,Roc Mélé	42.58765	1.74028	T	MT	AD	AD,FR	00				0		2803	Europe/Andorra	2014-11-05
-3023203	Port Vieux de la Coume d’Ose	Port Vieux de la Coume d'Ose	Port Vieux de Coume d'Ose,Port Vieux de Coume d’Ose,Port Vieux de la Coume d'Ose,Port Vieux de la Coume d’Ose	42.62568	1.61823	T	PASS	AD		00				0		2687	Europe/Andorra	2014-11-05
-3038833	Basers de Vicenç	Basers de Vicenc		42.47669	1.4829	T	CLF	AD		06				0		1019	Europe/Andorra	2015-03-08
+ï»¿2994701	Roc MÃ©lÃ©	Roc Mele	Roc Mele,Roc Meler,Roc MÃ©lÃ©	42.58765	1.74028	T	MT	AD	AD,FR	00				0		2803	Europe/Andorra	2014-11-05
+3023203	Port Vieux de la Coume dâ€™Ose	Port Vieux de la Coume d'Ose	Port Vieux de Coume d'Ose,Port Vieux de Coume dâ€™Ose,Port Vieux de la Coume d'Ose,Port Vieux de la Coume dâ€™Ose	42.62568	1.61823	T	PASS	AD		00				0		2687	Europe/Andorra	2014-11-05
+3038833	Basers de VicenÃ§	Basers de Vicenc		42.47669	1.4829	T	CLF	AD		06				0		1019	Europe/Andorra	2015-03-08
