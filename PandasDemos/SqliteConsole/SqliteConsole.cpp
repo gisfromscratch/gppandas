@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	//setlocale(LC_ALL, "en_US.UTF-8");
+	setlocale(LC_ALL, "en_US.utf8");
 	cout << "Trying to access " << argv[1] << endl;
 
 	// Try to open the file
@@ -56,22 +56,22 @@ int main(int argc, char* argv[])
 	bool skippedBom = false;
 	const wchar_t *delimiter = L"\t";
 	Utf8Line *utf8Line;
-	char *token;
+	char *utf8Token;	
 	while (utf8Line = file.nextLine())
 	{
-		if (token = utf8Line->nextToken(delimiter, true))
+		if (utf8Token = utf8Line->nextToken(delimiter, true))
 		{
-			int id = atoi(token);
+			int id = atoi(utf8Token);
 			int parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@ID");
 			if (SQLITE_OK != sqlite3_bind_int(preparedStatement, parameterIndex, id))
 			{
 				return -1;
 			}
 
-			if (token = utf8Line->nextToken(delimiter, false))
+			if (utf8Token = utf8Line->nextToken(delimiter, false))
 			{
 				parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@NAME");
-				if (SQLITE_OK != sqlite3_bind_text(preparedStatement, parameterIndex, token, -1, SQLITE_TRANSIENT))
+				if (SQLITE_OK != sqlite3_bind_text(preparedStatement, parameterIndex, utf8Token, strlen(utf8Token), SQLITE_TRANSIENT))
 				{
 					return -1;
 				}

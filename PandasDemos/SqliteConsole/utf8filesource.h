@@ -7,8 +7,9 @@ public:
 	Utf8Line()
 	{
 		_line = (wchar_t*) malloc(sizeof(wchar_t) * MaxLineBuffer);
+		_lineCopy = (wchar_t*) malloc(sizeof(wchar_t) * MaxLineBuffer);
 		_utf8Line = (char*) malloc(sizeof(char) * 2 * MaxLineBuffer);
-		_nextToken = (char*) malloc(sizeof(char) * 2 * MaxLineBuffer);
+		_utf8Token = (char*) malloc(sizeof(char) * 2 * MaxLineBuffer);
 	}
 
 	~Utf8Line()
@@ -18,10 +19,20 @@ public:
 			free(_line);
 			_line = 0;
 		}
+		if (_lineCopy)
+		{
+			free(_lineCopy);
+			_lineCopy = 0;
+		}
 		if (_utf8Line)
 		{
 			free(_utf8Line);
 			_utf8Line = 0;
+		}
+		if (_utf8Token)
+		{
+			free(_utf8Token);
+			_utf8Token = 0;
 		}
 	}
 
@@ -36,7 +47,8 @@ public:
 		wchar_t *token;
 		if (init)
 		{
-			token = wcstok(_line, delimiter);
+			wcsncpy(_lineCopy, _line, MaxLineBuffer);
+			token = wcstok(_lineCopy, delimiter);
 		}
 		else
 		{
@@ -47,17 +59,23 @@ public:
 			return 0;
 		}
 
-		if (!wcstombs(_nextToken, token, 2 * MaxLineBuffer))
+		string utf8Token = _utf8Converter.to_bytes(token);
+		if (!strcpy(_utf8Token, utf8Token.c_str()))
 		{
 			return 0;
 		}
-		return _nextToken;
+		/*if (!wcstombs(_utf8Token, token, 2 * MaxLineBuffer))
+		{
+			return 0;
+		}*/
+		return _utf8Token;
 	}
 
 	const size_t MaxLineBuffer = 1024;
-	wchar_t *_line;
+	wchar_t *_line, *_lineCopy;
 	char *_utf8Line;
-	char *_nextToken;
+	char *_utf8Token;
+	wstring_convert<codecvt_utf8<wchar_t>> _utf8Converter;
 };
 
 class Utf8FileSource {

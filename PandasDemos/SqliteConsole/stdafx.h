@@ -8,6 +8,7 @@
 #include "targetver.h"
 
 #include <algorithm>
+#include <codecvt>
 #include <fstream>
 #include <iostream>
 #include "sqlite3.h"
