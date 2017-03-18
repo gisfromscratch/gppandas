@@ -32,8 +32,14 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	// Drop table
+	if (!dataStore.exec("DROP TABLE IF EXISTS Geonames"))
+	{
+		return -1;
+	}
+
 	// Create table
-	if (!dataStore.exec("CREATE TABLE IF NOT EXISTS Geonames(ID INTEGER, Name TEXT);"))
+	if (!dataStore.exec("CREATE TABLE Geonames(GeonameId INTEGER, Name TEXT, ASCIIName TEXT, AlternateNames TEXT, Latitude REAL, Longitude REAL);"))
 	{		
 		return -1;
 	}
@@ -46,7 +52,7 @@ int main(int argc, char* argv[])
 
 	const size_t sizeOfBom = 3;
 
-	char *sqlInsertStatement = "INSERT INTO Geonames VALUES(@ID, @NAME)";
+	char *sqlInsertStatement = "INSERT INTO Geonames VALUES(@ID, @NAME, @ASCIIName, @AlternateNames, @Latitude, @Longitude)";
 	sqlite3_stmt *preparedStatement = dataStore.prepare(sqlInsertStatement);
 	if (!preparedStatement)
 	{
@@ -61,13 +67,15 @@ int main(int argc, char* argv[])
 	{
 		if (utf8Token = utf8Line->nextToken(delimiter, true))
 		{
-			int id = atoi(utf8Token);
+			// GeonamesId
+			__int64 id = _atoi64(utf8Token);
 			int parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@ID");
-			if (SQLITE_OK != sqlite3_bind_int(preparedStatement, parameterIndex, id))
+			if (SQLITE_OK != sqlite3_bind_int64(preparedStatement, parameterIndex, id))
 			{
 				return -1;
 			}
 
+			// Name
 			if (utf8Token = utf8Line->nextToken(delimiter, false))
 			{
 				parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@NAME");
@@ -75,10 +83,52 @@ int main(int argc, char* argv[])
 				{
 					return -1;
 				}
-
-				// Insert record
-				sqlite3_step(preparedStatement);
 			}
+
+			// ASCIIName
+			if (utf8Token = utf8Line->nextToken(delimiter, false))
+			{
+				parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@ASCIIName");
+				if (SQLITE_OK != sqlite3_bind_text(preparedStatement, parameterIndex, utf8Token, strlen(utf8Token), SQLITE_TRANSIENT))
+				{
+					return -1;
+				}
+			}
+
+			// AlternateNames
+			if (utf8Token = utf8Line->nextToken(delimiter, false))
+			{
+				parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@AlternateNames");
+				if (SQLITE_OK != sqlite3_bind_text(preparedStatement, parameterIndex, utf8Token, strlen(utf8Token), SQLITE_TRANSIENT))
+				{
+					return -1;
+				}
+			}
+
+			// Latitude
+			if (utf8Token = utf8Line->nextToken(delimiter, false))
+			{
+				double latitude = atof(utf8Token);
+				parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@Latitude");
+				if (SQLITE_OK != sqlite3_bind_double(preparedStatement, parameterIndex, latitude))
+				{
+					return -1;
+				}
+			}
+
+			// Longitude
+			if (utf8Token = utf8Line->nextToken(delimiter, false))
+			{
+				double longitude = atof(utf8Token);
+				parameterIndex = sqlite3_bind_parameter_index(preparedStatement, "@Longitude");
+				if (SQLITE_OK != sqlite3_bind_double(preparedStatement, parameterIndex, longitude))
+				{
+					return -1;
+				}
+			}
+
+			// Insert record
+			sqlite3_step(preparedStatement);
 
 			// Clear bindings
 			sqlite3_clear_bindings(preparedStatement);
